@@ -14,13 +14,13 @@ SQSIZE = WIDTH // COLS
 WHITE = (255, 255, 255)
 
 # Load Images
-x_img = pygame.image.load("X.png")
+x_img = pygame.image.load("X1.png")
 x_img = pygame.transform.scale(x_img, (SQSIZE, SQSIZE))
 
-o_img = pygame.image.load("circle.png")
+o_img = pygame.image.load("circle1.png")
 o_img = pygame.transform.scale(o_img, (SQSIZE, SQSIZE))
 
-bg_img = pygame.image.load("track.png")
+bg_img = pygame.image.load("track1.png")
 bg_img = pygame.transform.scale(bg_img, (WIDTH, HEIGHT))
 
 # Setup
