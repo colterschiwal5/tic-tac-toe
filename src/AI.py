@@ -1,136 +1,162 @@
 import pygame
-import sys
 import random
 
-# Initialize
+# Initialize Pygame
 pygame.init()
 
-# Screen settings
+# Constants
 WIDTH, HEIGHT = 600, 600
-ROWS, COLS = 3, 3
-SQSIZE = WIDTH // COLS
+CELL_SIZE = WIDTH // 3
+LINE_WIDTH = 15
 
 # Colors
 WHITE = (255, 255, 255)
 
-# Load Images
-x_img = pygame.image.load("X1.png")
-x_img = pygame.transform.scale(x_img, (SQSIZE, SQSIZE))
+# Load images
+X_IMG = pygame.image.load("X1.png")
+O_IMG = pygame.image.load("circle1.png")
+BOARD_IMG = pygame.image.load("track1.png")
 
-o_img = pygame.image.load("circle1.png")
-o_img = pygame.transform.scale(o_img, (SQSIZE, SQSIZE))
+# Resize images
+X_IMG = pygame.transform.scale(X_IMG, (CELL_SIZE, CELL_SIZE))
+O_IMG = pygame.transform.scale(O_IMG, (CELL_SIZE, CELL_SIZE))
+BOARD_IMG = pygame.transform.scale(BOARD_IMG, (WIDTH, HEIGHT))
 
-bg_img = pygame.image.load("track1.png")
-bg_img = pygame.transform.scale(bg_img, (WIDTH, HEIGHT))
-
-# Setup
+# Game variables
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Tic Tac Toe AI")
+pygame.display.set_caption("Tic Tac Toe")
+
 font = pygame.font.SysFont(None, 48)
 
-# Game State
-board = [[None for _ in range(COLS)] for _ in range(ROWS)]
-player_turn = True  # True = X, False = O (AI)
-difficulty = "hard"  # Options: 'easy', 'medium', 'hard'
-game_over = False
+# Board state
+board = [["" for _ in range(3)] for _ in range(3)]
+player_turn = "X"  # "X" always goes first
 
-# Functions
+
 def draw_board():
-    screen.blit(bg_img, (0, 0))
-    for row in range(ROWS):
-        for col in range(COLS):
+    screen.blit(BOARD_IMG, (0, 0))
+    for row in range(3):
+        for col in range(3):
             if board[row][col] == "X":
-                screen.blit(x_img, (col * SQSIZE, row * SQSIZE))
+                screen.blit(X_IMG, (col * CELL_SIZE, row * CELL_SIZE))
             elif board[row][col] == "O":
-                screen.blit(o_img, (col * SQSIZE, row * SQSIZE))
+                screen.blit(O_IMG, (col * CELL_SIZE, row * CELL_SIZE))
 
-def get_winner():
-    for row in board:
-        if row[0] == row[1] == row[2] and row[0] is not None:
-            return row[0]
-    for col in range(COLS):
-        if board[0][col] == board[1][col] == board[2][col] and board[0][col] is not None:
-            return board[0][col]
-    if board[0][0] == board[1][1] == board[2][2] and board[0][0] is not None:
+
+def check_winner():
+    # Check rows, cols and diagonals
+    for i in range(3):
+        if board[i][0] != "" and board[i][0] == board[i][1] == board[i][2]:
+            return board[i][0]
+        if board[0][i] != "" and board[0][i] == board[1][i] == board[2][i]:
+            return board[0][i]
+
+    if board[0][0] != "" and board[0][0] == board[1][1] == board[2][2]:
         return board[0][0]
-    if board[0][2] == board[1][1] == board[2][0] and board[0][2] is not None:
+    if board[0][2] != "" and board[0][2] == board[1][1] == board[2][0]:
         return board[0][2]
-    return None
 
-def board_full():
-    return all(all(cell is not None for cell in row) for row in board)
+    for row in board:
+        for cell in row:
+            if cell == "":
+                return None  # game still going
+
+    return "Draw"  # No empty cells and no winner
+
 
 def ai_move():
-    empty = [(r, c) for r in range(ROWS) for c in range(COLS) if board[r][c] is None]
+    best_score = -float('inf')
+    best_move = None
 
-    if difficulty == "easy":
-        return random.choice(empty)
+    for r in range(3):
+        for c in range(3):
+            if board[r][c] == "":
+                board[r][c] = "O"
+                score = minimax(board, 0, False)
+                board[r][c] = ""
+                if score > best_score:
+                    best_score = score
+                    best_move = (r, c)
 
-    elif difficulty == "medium":
-        # Try to win, else random
-        for r, c in empty:
-            board[r][c] = "O"
-            if get_winner() == "O":
-                return (r, c)
-            board[r][c] = None
-        return random.choice(empty)
+    return best_move
 
-    elif difficulty == "hard":
-        return minimax(board, True)[1]
-
-def minimax(state, is_maximizing):
-    winner = get_winner()
-    if winner == "O": return 1, None
-    if winner == "X": return -1, None
-    if board_full(): return 0, None
-
-    moves = []
-    for r in range(ROWS):
-        for c in range(COLS):
-            if state[r][c] is None:
-                state[r][c] = "O" if is_maximizing else "X"
-                score = minimax(state, not is_maximizing)[0]
-                moves.append((score, (r, c)))
-                state[r][c] = None
+def minimax(board_state, depth, is_maximizing):
+    result = check_winner()
+    if result == "O":
+        return 1
+    elif result == "X":
+        return -1
+    elif result == "Draw":
+        return 0
 
     if is_maximizing:
-        return max(moves, key=lambda x: x[0])
+        best_score = -float('inf')
+        for r in range(3):
+            for c in range(3):
+                if board_state[r][c] == "":
+                    board_state[r][c] = "O"
+                    score = minimax(board_state, depth + 1, False)
+                    board_state[r][c] = ""
+                    best_score = max(score, best_score)
+        return best_score
     else:
-        return min(moves, key=lambda x: x[0])
+        best_score = float('inf')
+        for r in range(3):
+            for c in range(3):
+                if board_state[r][c] == "":
+                    board_state[r][c] = "X"
+                    score = minimax(board_state, depth + 1, True)
+                    board_state[r][c] = ""
+                    best_score = min(score, best_score)
+        return best_score
 
-# Game loop
-while True:
-    screen.fill(WHITE)
-    draw_board()
+def reset():
+    global board, player_turn
+    board = [["" for _ in range(3)] for _ in range(3)]
+    player_turn = "X"
 
-    if game_over:
-        winner = get_winner()
+
+def run_game(mode="pvai"):
+    global player_turn
+    reset()
+    running = True
+    clock = pygame.time.Clock()
+
+    while running:
+        clock.tick(60)
+        screen.fill(WHITE)
+        draw_board()
+        winner = check_winner()
+
         if winner:
-            text = font.render(f"{winner} wins!", True, (0, 0, 0))
+            msg = f"{winner} wins!" if winner != "Draw" else "Draw!"
+            text = font.render(msg, True, (0, 0, 0))
+            screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2))
         else:
-            text = font.render("It's a draw!", True, (0, 0, 0))
-        screen.blit(text, (WIDTH//2 - text.get_width()//2, HEIGHT//2 - text.get_height()//2))
-    else:
-        if not player_turn:
-            row, col = ai_move()
-            board[row][col] = "O"
-            player_turn = True
-            if get_winner() or board_full():
-                game_over = True
+            if mode == "aivai" or (mode == "pvai" and player_turn == "O"):
+                pygame.time.delay(500)
+                move = ai_move()
+                if move:
+                    r, c = move
+                    board[r][c] = player_turn
+                    player_turn = "O" if player_turn == "X" else "X"
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                return
 
-        if event.type == pygame.MOUSEBUTTONDOWN and player_turn and not game_over:
-            x, y = pygame.mouse.get_pos()
-            row, col = y // SQSIZE, x // SQSIZE
-            if board[row][col] is None:
-                board[row][col] = "X"
-                player_turn = False
-                if get_winner() or board_full():
-                    game_over = True
+            if event.type == pygame.MOUSEBUTTONDOWN and winner is None:
+                if (mode == "pvp") or (mode == "pvai" and player_turn == "X"):
+                    x, y = pygame.mouse.get_pos()
+                    row = y // CELL_SIZE
+                    col = x // CELL_SIZE
+                    if board[row][col] == "":
+                        board[row][col] = player_turn
+                        player_turn = "O" if player_turn == "X" else "X"
 
-    pygame.display.flip()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_r:
+                    reset()
 
+        pygame.display.update()
