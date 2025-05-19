@@ -39,7 +39,7 @@ back_button = button.Button(20, 20, back_img, 0.6)
 # Mode buttons
 aivai_button = button.Button(100, 150, aivai_img, 0.8)
 pvai_button = button.Button(100, 250, pva_img, 0.8)
-pvp_button  = button.Button(100, 350, pvp_img, 0.8)
+pvp_button = button.Button(100, 350, pvp_img, 0.8)
 
 # State
 in_settings = False
@@ -51,7 +51,7 @@ run = True
 while run:
     clock.tick(FPS)
 
-    # Determine background
+    # Draw background
     if in_mode_select:
         screen.blit(mode_bg, (0, 0))
     elif in_settings:
@@ -62,16 +62,21 @@ while run:
     # Draw Buttons
     if in_mode_select:
         if aivai_button.draw(screen):
-            print("AI vs AI mode selected")  # Replace with function later
-        elif pvp_button.draw(screen):
-            print("Player vs Player mode selected")
-        elif pva_button.draw(screen):
-            print("Player vs AI mode selected")
-        if back_button.draw(screen):
+            AI.run_game('aivai')
             in_mode_select = False
+        elif pvp_button.draw(screen):
+            AI.run_game('pvp')
+            in_mode_select = False
+        elif pvai_button.draw(screen):
+            AI.run_game('pvai')
+            in_mode_select = False
+        elif back_button.draw(screen):
+            in_mode_select = False
+
     elif in_settings:
         if back_button.draw(screen):
             in_settings = False
+
     else:
         if start_button.draw(screen):
             in_mode_select = True
@@ -86,4 +91,3 @@ while run:
     pygame.display.update()
 
 pygame.quit()
-
